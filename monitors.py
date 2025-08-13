@@ -16,6 +16,14 @@ class DiskMonitor:
         self.max_history_size = hysterisis_time
 
     def get(self):
+        """
+        Gets the percentage of the system's disk throughput for reading and writing.
+
+        Returns:
+            A tuple containing the percentages of the system's disk throughput for reading
+              and writing data as floats between 0.0 and 1.0. This is a ratio based on
+              the highest disk throughput rate over the history of the monitor.
+        """
         try:
             disk_io = psutil.disk_io_counters()
             read_usage = disk_io.read_bytes
@@ -52,6 +60,14 @@ class NetworkMonitor:
         self.max_history_size = hysterisis_time
 
     def get(self):
+        """
+        Gets the percentage of the system's network usage.
+
+        Returns:
+            A tuple containing the percentages of the system's network usage for sending
+              and receiving data as floats between 0.0 and 1.0. This is a ratio based on
+              the highest network usage rate over the history of the monitor.
+        """
         try:
             net_io = psutil.net_io_counters()
             sent_usage = net_io.bytes_sent
@@ -86,6 +102,12 @@ class CPUMonitor:
         self.max_history_size = hysterisis_time
 
     def get(self):
+        """
+        Gets the percentage of the system's CPU usage per core.
+
+        Returns:
+            A list of values between 0.0 and 1.0 which is scaled to the CPU usage per core
+        """
         try:
             cpu_usage = psutil.cpu_percent(percpu=True)
             for i in range(self.cpu_count):
@@ -108,12 +130,24 @@ class CPUMonitor:
 class MemoryMonitor:
     @staticmethod
     def get():
+        """
+        Gets the percentage of the system's memory usage.
+
+        Returns:
+            A value between 0.0 and 1.0 which is scaled to the memory usage
+        """
         return psutil.virtual_memory().percent / 100.0
     
 
 class BatteryMonitor:
     @staticmethod
     def get():
+        """
+        Gets the percentage of the battery's charge and whether it is plugged in.
+
+        Returns:
+            A tuple containing the battery percentage as a float between 0.0 and 1.0 and whether it is plugged in
+        """
         battery = psutil.sensors_battery()
         if battery is not None:
             battery_percentage = battery.percent / 100.0
