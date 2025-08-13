@@ -126,16 +126,34 @@ class BatteryMonitor:
         
 
 def get_monitor_brightness():
+    """
+    Gets the brightness of the main laptop display so that we can scale the LED Matrix
+      brightness to match. Handles operating system or configuration specific logic to
+      retrieve the brightness value.
+
+    Returns:
+        A value between 0.0 and 1.0 which is scaled to the monitor's brightness
+    """
+    brightness_value = 1.0
     try:
         if os.name == 'nt':
             return wmi.WMI(namespace='wmi').WmiMonitorBrightness()[0].CurrentBrightness / 100.0
         else:
             try: # First try the dGPU brightness
-                return int(open('/sys/class/backlight/amdgpu_bl2/brightness', 'r').read()) / 255.0
+                brightness_value = int(open('/sys/class/backlight/amdgpu_bl2/brightness', 'r').read()) / 255.0
             except: # If that doesn't work, try the iGPU brightness
-                return int(open('/sys/class/backlight/amdgpu_bl1/brightness', 'r').read()) / 255.0
+                brightness_value = int(open('/sys/class/backlight/amdgpu_bl1/brightness', 'r').read()) / 255.0
     except Exception as e:
-        return 1.0
+        print(f"Error in get_monitor_brightness(): {e}")
+        
+    if brightness_value < 0.0:
+        print(f"Invalid brightness value returned by get_monitor_brightness(): {brightness_value}")
+        brightness_value = 0.0
+    elif brightness_value > 1.0:
+        print(f"Invalid brightness value returned by get_monitor_brightness(): {brightness_value}")
+        brightness_value = 1.0
+
+    return brightness_value
 
 if __name__ == "__main__":
     print(get_monitor_brightness())
