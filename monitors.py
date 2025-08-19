@@ -174,9 +174,11 @@ def get_monitor_brightness():
             return wmi.WMI(namespace='wmi').WmiMonitorBrightness()[0].CurrentBrightness / 100.0
         else:
             try: # First try the dGPU brightness
-                brightness_value = int(open('/sys/class/backlight/amdgpu_bl2/brightness', 'r').read()) / 255.0
+                brightness_max = int(open('/sys/class/backlight/amdgpu_bl2/max_brightness', 'r').read())
+                brightness_value = int(open('/sys/class/backlight/amdgpu_bl2/brightness', 'r').read()) / brightness_max
             except: # If that doesn't work, try the iGPU brightness
-                brightness_value = int(open('/sys/class/backlight/amdgpu_bl1/brightness', 'r').read()) / 255.0
+                brightness_max = int(open('/sys/class/backlight/amdgpu_bl1/max_brightness', 'r').read())
+                brightness_value = int(open('/sys/class/backlight/amdgpu_bl1/brightness', 'r').read()) / brightness_max
     except Exception as e:
         print(f"Error in get_monitor_brightness(): {e}")
         
