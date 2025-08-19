@@ -1,3 +1,4 @@
+sudo apt install python3-serial
 chmod +x run.sh
 rm -f fwledmonitor.service || true
 cat <<EOF >>./fwledmonitor.service

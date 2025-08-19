@@ -8,7 +8,7 @@ from commands import Commands, send_command
 
 # External Dependencies
 import numpy as np
-import serial # pyserial
+import serial # pip install pyserial, apt install python3-serial
 from serial.tools import list_ports
 
 
