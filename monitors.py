@@ -168,28 +168,17 @@ def get_monitor_brightness():
     Returns:
         A value between 0.0 and 1.0 which is scaled to the monitor's brightness
     """
-    brightness_value = 1.0
     try:
         if os.name == 'nt':
             return wmi.WMI(namespace='wmi').WmiMonitorBrightness()[0].CurrentBrightness / 100.0
         else:
-            try: # First try the dGPU brightness
-                brightness_max = int(open('/sys/class/backlight/amdgpu_bl2/max_brightness', 'r').read())
-                brightness_value = int(open('/sys/class/backlight/amdgpu_bl2/brightness', 'r').read()) / brightness_max
-            except: # If that doesn't work, try the iGPU brightness
-                brightness_max = int(open('/sys/class/backlight/amdgpu_bl1/max_brightness', 'r').read())
-                brightness_value = int(open('/sys/class/backlight/amdgpu_bl1/brightness', 'r').read()) / brightness_max
+            gpu_designator = os.listdir('/sys/class/backlight')[0] # Get the gpu designator
+            brightness_max = int(open(f'/sys/class/backlight/{gpu_designator}/max_brightness', 'r').read())
+            return int(open(f'/sys/class/backlight/{gpu_designator}/brightness', 'r').read()) / brightness_max
     except Exception as e:
         print(f"Error in get_monitor_brightness(): {e}")
-        
-    if brightness_value < 0.0:
-        print(f"Invalid brightness value returned by get_monitor_brightness(): {brightness_value}")
-        brightness_value = 0.0
-    elif brightness_value > 1.0:
-        print(f"Invalid brightness value returned by get_monitor_brightness(): {brightness_value}")
-        brightness_value = 1.0
+        return 1.0
 
-    return brightness_value
 
 if __name__ == "__main__":
     print(get_monitor_brightness())
