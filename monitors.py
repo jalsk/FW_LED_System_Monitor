@@ -96,7 +96,7 @@ class NetworkMonitor:
 
 class CPUMonitor:
     def __init__(self, hysterisis_time = 10):
-        self.cpu_count = psutil.cpu_count() // 2 # 2 logical cores per physical core
+        self.cpu_count = psutil.cpu_count(logical=False)
         self.cpu_usage_history = [[] for _ in range(self.cpu_count)]
         self.history_times = []
         self.max_history_size = hysterisis_time
@@ -111,10 +111,10 @@ class CPUMonitor:
         try:
             cpu_usage = psutil.cpu_percent(percpu=True)
             for i in range(self.cpu_count):
-                useage = 2 * max(cpu_usage[2*i], cpu_usage[2*i+1]) # Combine logical cores
-                if useage > 100:
-                    useage = 100
-                self.cpu_usage_history[i].append(useage / 100.0)
+                usage = 2 * max(cpu_usage[2*i], cpu_usage[2*i+1]) # Combine logical cores
+                if usage > 100:
+                    usage = 100
+                self.cpu_usage_history[i].append(usage / 100.0)
             self.history_times.append(time.time())
             if len(self.cpu_usage_history[0]) > self.max_history_size:
                 for i in range(self.cpu_count):
@@ -157,7 +157,20 @@ class BatteryMonitor:
                 bat_status = open('/sys/class/power_supply/BAT1/status', 'r').read().strip()
                 battery_plugged = (bat_status != 'Discharging')
             return battery_percentage, battery_plugged
-        
+        return None, None
+
+def get_monitor_max_brightness():
+    try:
+        if os.name == "nt":
+            return 100.0
+        else:
+            try: # First try the dGPU brightness
+                return int(open('/sys/class/backlight/amdgpu_bl2/max_brightness', 'r').read()) / 255.0
+            except: # If that doesn't work, try the iGPU brightness
+                return int(open('/sys/class/backlight/amdgpu_bl1/max_brightness', 'r').read()) / 255.0
+    except Exception as e:
+        return 100.0
+
 
 def get_monitor_brightness():
     """
@@ -175,6 +188,13 @@ def get_monitor_brightness():
             gpu_designator = os.listdir('/sys/class/backlight')[0] # Get the gpu designator
             brightness_max = int(open(f'/sys/class/backlight/{gpu_designator}/max_brightness', 'r').read())
             return int(open(f'/sys/class/backlight/{gpu_designator}/brightness', 'r').read()) / brightness_max
+            #current_brightness = 1.0
+            #try: # First try the dGPU brightness
+            #    current_brightness = int(open('/sys/class/backlight/amdgpu_bl2/brightness', 'r').read()) / 255.0
+            #except: # If that doesn't work, try the iGPU brightness
+            #    current_brightness = int(open('/sys/class/backlight/amdgpu_bl1/brightness', 'r').read()) / 255.0
+            #max_brightness = get_monitor_max_brightness()
+            #return current_brightness / max_brightness
     except Exception as e:
         print(f"Error in get_monitor_brightness(): {e}")
         return 1.0

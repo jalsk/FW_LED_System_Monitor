@@ -83,6 +83,20 @@ lightning_bolt = np.array( [[0,0,0,0,0,0,0], # 0
                             [0,0,0,0,0,0,0]],#12
                             dtype=bool).T 
 
+exclamation_point = np.array( [[0,0,0,0,0,0,0], # 0
+                            [0,0,1,1,1,0,0], # 1
+                            [0,0,1,1,1,0,0], # 2
+                            [0,0,1,1,1,0,0], # 3
+                            [0,0,1,1,1,0,0], # 4
+                            [0,0,1,1,1,0,0], # 5
+                            [0,0,1,1,1,0,0], # 6
+                            [0,0,1,1,1,0,0], # 7
+                            [0,0,0,0,0,0,0], # 8
+                            [0,0,1,1,1,0,0], # 9
+                            [0,0,1,1,1,0,0], #10
+                            [0,0,1,1,1,0,0], #11
+                            [0,0,0,0,0,0,0]],#12
+                            dtype=bool).T
 
 # Correct table orientation for visual orientation when drawn
 for i in range(lookup_table.shape[0]):
@@ -113,6 +127,9 @@ def draw_battery(grid, battery_ratio, battery_plugged, fill_value, battery_low_t
     lit_pixels = int(round(13 * 7 * battery_ratio))
     pixels_base = lit_pixels // 7
     remainder = lit_pixels % 7
+    if battery_plugged is None and battery_ratio is None:
+        grid[1:8,20:33] = exclamation_point
+        return
     if battery_ratio <= battery_low_thresh and not battery_plugged:
         if time.time() % battery_low_flash_time * 2 < battery_low_flash_time: # This will flash the battery indicator if too low
             return
@@ -192,6 +209,7 @@ def init_device(location = "1-4.2"):
                 return s
     except Exception as e:
         print(e)
+    raise EnvironmentError(f"Unable to initialize device with location {location}")
 
 
 class DrawingThread(threading.Thread):
