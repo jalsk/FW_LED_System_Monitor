@@ -1,6 +1,7 @@
 # Built In Dependencies
 import time
 import math
+import re
 import threading
 
 # Internal Dependencies
@@ -198,15 +199,32 @@ def draw_to_LEDs(s, grid):
     send_command(s, Commands.FlushCols)
 
 
+# Framework's LED Matrix Input Module. Both modules report the same USB serial
+# number, so the physical port chain is the only way to tell left from right.
+LED_MATRIX_VID = 0x32AC
+LED_MATRIX_PID = 0x0020
+
+
+def usb_port_chain(location):
+    """Strip the USB bus number and interface suffix from a pyserial location.
+
+    A location looks like "3-4.2:1.0": bus 3, port chain 4.2, interface 1.0.
+    The bus number depends on the order the kernel probes USB controllers, so
+    attaching a dock with its own controller at boot renumbers the internal
+    controller and every device hanging off it. The port chain reflects the
+    physical topology and is stable, so match on that alone.
+    """
+    return re.sub(r"^\d+-", "", (location or "").split(":")[0])
+
+
 def init_device(location = "1-4.2"):
+    target_chain = usb_port_chain(location)
     try:
-        # VID = 1234
-        # PID = 5678
-        device_list = list_ports.comports()
-        for device in device_list:
-            if device.location and device.location.startswith(location):
-                s = serial.Serial(device.device, 115200)
-                return s
+        for device in list_ports.comports():
+            if device.vid != LED_MATRIX_VID or device.pid != LED_MATRIX_PID:
+                continue
+            if usb_port_chain(device.location) == target_chain:
+                return serial.Serial(device.device, 115200)
     except Exception as e:
         print(e)
     raise EnvironmentError(f"Unable to initialize device with location {location}")
